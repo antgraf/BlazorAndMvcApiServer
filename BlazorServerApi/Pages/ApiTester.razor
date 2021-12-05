@@ -1,0 +1,109 @@
+﻿@page "/apitester"
+
+@using BlazorServerApi.Api
+@inject NavigationManager Navigation
+
+<PageTitle>API Tester</PageTitle>
+
+<h1>API Tester</h1>
+
+<p>
+    @repo
+</p>
+
+<EditForm Model=@dto>
+    <InputNumber id="id" @bind-Value=dto.Id />
+    <InputText id="str" @bind-Value=dto.Str />
+    <button type="submit" @onclick="Create">Create</button>
+    <button type="submit" @onclick="Edit">Edit</button>
+    <button type="submit" @onclick="Delete">Delete</button>
+</EditForm>
+
+<pre>
+    @error
+</pre>
+
+@code {
+    private ApiDto dto = new ApiDto();
+    private string repo = string.Empty;
+    private string error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Update();
+    }
+
+    private async void Create()
+    {
+        try
+        {
+            using (var client = CreateHttpClient())
+            {
+                var response = await client.PostAsJsonAsync<string>("api/Api", dto.Str);
+                response.EnsureSuccessStatusCode();
+            }
+        }
+        catch (Exception e)
+        {
+            error = e.ToString();
+        }
+        await Update();
+    }
+
+    private async void Edit()
+    {
+        try
+        {
+            using (var client = CreateHttpClient())
+            {
+                var response = await client.PutAsJsonAsync<ApiDto>($"api/Api", dto);
+                response.EnsureSuccessStatusCode();
+            }
+        }
+        catch (Exception e)
+        {
+            error = e.ToString();
+        }
+        await Update();
+    }
+
+    private async void Delete()
+    {
+        try
+        {
+            using (var client = CreateHttpClient())
+            {
+                var response = await client.DeleteAsync($"api/Api/{dto.Id}");
+                response.EnsureSuccessStatusCode();
+            }
+        }
+        catch (Exception e)
+        {
+            error = e.ToString();
+        }
+        await Update();
+    }
+
+    private async Task Update()
+    {
+        try
+        {
+            using (var client = CreateHttpClient())
+            {
+                var response = await client.GetAsync("api/Api");
+                response.EnsureSuccessStatusCode();
+                repo = await response.Content.ReadAsStringAsync();
+                StateHasChanged();
+            }
+        }
+        catch (Exception e)
+        {
+            error = e.ToString();
+        }
+    }
+
+    private HttpClient CreateHttpClient()
+    {
+        return new HttpClient { BaseAddress = new Uri(Navigation.Uri) };
+    }
+}
